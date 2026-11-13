@@ -1,0 +1,24 @@
+{
+  "name": "reclutamiento-docentes",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "token": "node --env-file=.env.local scripts/get-refresh-token.mjs"
+  },
+  "dependencies": {
+    "googleapis": "^190.0.0",
+    "jose": "^6.2.17",
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,29 @@
+<!doctype html><html lang="es"><head><title>Panel de reclutamiento</title><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Serif+4:wght@600&display=swap"><link rel="stylesheet" href="/style.css"></head><body><main class="wide"><h1>Panel de reclutamiento</h1>
+<div id="login" class="card"><label for="pw">Contraseña</label><input id="pw" type="password"><p id="e" class="err" role="alert"></p><button id="in">Entrar</button></div>
+<div id="app" hidden><div class="row"><label for="fm" style="margin:0">Maestría</label><select id="fm" style="width:auto"></select><label for="fs" style="margin:0">Estado</label><select id="fs" style="width:auto"></select></div>
+<p id="cnt" class="muted"></p><div class="card" style="overflow:auto"><table><thead><tr><th>Candidato</th><th>Maestría</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tb"></tbody></table></div></div></main>
+<script>
+const $=id=>document.getElementById(id);let pw='',all=[];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const call=(m,u,b)=>fetch(u,{method:m,headers:{'Content-Type':'application/json','x-admin-password':pw},body:b&&JSON.stringify(b)});
+$('in').onclick=async()=>{pw=$('pw').value;const r=await call('GET','/api/admin');if(!r.ok){$('e').textContent='Contraseña incorrecta.';return}
+ $('login').hidden=true;$('app').hidden=false;all=await r.json();filters();draw()};
+function filters(){$('fm').innerHTML='<option value="">Todas</option>'+[...new Set(all.map(c=>c.maestria))].map(m=>'<option>'+esc(m)+'</option>').join('');
+ $('fs').innerHTML='<option value="">Todos</option>'+[...new Set(all.map(c=>c.status))].map(m=>'<option>'+esc(m)+'</option>').join('');$('fm').onchange=$('fs').onchange=draw}
+function acts(c){const b=(a,l)=>'<button class="alt" data-a="'+a+'" data-id="'+c.id+'">'+l+'</button>';
+ if(c.status==='en_revision')return b('docs','Ver documentos')+b('validar','Validar')+b('correccion','Pedir corrección')+b('no_cumple','No cumple');
+ if(c.status==='correccion_solicitada'||c.status==='validado'||c.status==='docs_pendientes')return b('docs','Ver documentos');
+ if(c.status==='entrevista_agendada')return '<div>'+esc(c.slot?new Date(c.slot).toLocaleString('es-MX',{timeZone:'America/Mexico_City'}):'')+'</div>'+b('meet','Enviar enlace de Meet')+b('entrevista','Registrar entrevista');
+ if(c.status==='entrevistado')return '<div>Propuesto: '+esc(c.estado_propuesto)+'</div>'+b('final','Confirmar estado final');return ''}
+function draw(){const m=$('fm').value,s=$('fs').value,l=all.filter(c=>(!m||c.maestria===m)&&(!s||c.status===s));
+ const sel=all.filter(c=>c.status==='seleccionado'&&(!m||c.maestria===m)).length;$('cnt').textContent=l.length+' candidatos · '+sel+' seleccionados (meta: 5 por maestría)';
+ $('tb').innerHTML=l.map(c=>'<tr><td><strong>'+esc(c.nombre)+'</strong><br>'+esc(c.correo)+(c.doctorado?'<br><span class="pill">Doctorado</span>':'')+'</td><td>'+esc(c.maestria)+'</td><td><span class="pill">'+esc(c.status)+'</span>'+(c.motivo?'<br>'+esc(c.motivo):'')+'</td><td><div class="row" id="a'+c.id+'">'+acts(c)+'</div></td></tr>').join('')}
+$('tb').onclick=async e=>{const a=e.target.dataset.a;if(!a)return;const id=e.target.dataset.id,body={id,action:a};
+ if(a==='docs'){const d=await(await call('GET','/api/admin?docs='+id)).json();e.target.parentElement.insertAdjacentHTML('beforeend',Object.entries(d).map(([k,u])=>'<a href="'+u+'" target="_blank" rel="noopener">'+k+'</a>').join(' · ')||'Sin documentos');return}
+ if(a==='correccion'){body.motivo=prompt('¿Qué documento debe corregir y por qué?');if(!body.motivo)return}
+ if(a==='meet'){body.link=prompt('Pega el enlace de Meet');if(!body.link)return}
+ if(a==='entrevista'){body.estado=prompt('Estado propuesto: seleccionado, banco_reserva o rechazado');body.notas=prompt('Notas de la entrevista (experiencia temática y docente en línea)');if(!body.estado)return}
+ if(a==='final'){body.estado=prompt('Estado final confirmado por la dirección: seleccionado, banco_reserva o rechazado');if(!body.estado)return}
+ const r=await call('POST','/api/admin',body);if(!r.ok){alert((await r.json()).error);return}
+ all=await(await call('GET','/api/admin')).json();filters();draw()};
+</script></body></html>

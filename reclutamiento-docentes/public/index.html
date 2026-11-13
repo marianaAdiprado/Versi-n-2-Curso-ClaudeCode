@@ -1,0 +1,35 @@
+<!doctype html><html lang="es"><head><title>Convocatoria docente · Maestrías</title><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Serif+4:wght@600&display=swap"><link rel="stylesheet" href="/style.css"></head><body><main>
+<h1>Da clase en nuestras maestrías en línea:
+<hr>Maestría en Dirección Estratégica del Talento, Bienestar Ocupacional y Desarrollo Organizacional
+<hr>Maestría en Ciencias del Aprendizaje, Neurodiversidad, Inclusión e Innovación Educativa
+<hr>Maestría en Peritaje, Conducta Criminal y Ciencias Forenses
+</h1>
+<p>Buscamos docentes con maestría que quieran impartir en modalidad virtual. Responde este registro: en unos minutos sabrás si puedes continuar.</p>
+<form id="f" class="card" novalidate>
+<label for="nombre">Nombre completo</label><input id="nombre" type="text" required autocomplete="name">
+<label for="correo">Correo electrónico</label><input id="correo" type="email" required autocomplete="email">
+<label for="telefono">Teléfono (opcional)</label><input id="telefono" type="tel" autocomplete="tel">
+<label for="maestria">Maestría a la que aplicas (solo una)</label><select id="maestria" required></select>
+<label for="regimen">Régimen fiscal actual</label><select id="regimen" required></select>
+<label class="chk"><input type="checkbox" id="titulo"> Cuento con título y cédula de maestría</label>
+<label class="chk"><input type="checkbox" id="exp_virtual"> Tengo experiencia docente en ambientes virtuales</label>
+<label class="chk"><input type="checkbox" id="reside_cdmx"> Resido en la Ciudad de México</label>
+<label class="chk"><input type="checkbox" id="doctorado"> Cuento con doctorado (deseable)</label>
+<label class="chk"><input type="checkbox" id="privacidad"> Acepto el aviso de privacidad: mis datos y documentos se usarán solo para este proceso de selección, serán accesibles únicamente para la coordinación y las direcciones de maestría, y se conservarán 2 años.</label>
+<p id="msg" class="err" role="alert"></p><button id="go">Enviar registro</button></form>
+<div id="ok" class="card" hidden></div></main>
+<script>
+const $=id=>document.getElementById(id);
+fetch('/api/register').then(r=>r.json()).then(c=>{
+ if(!c.abierta){$('f').hidden=true;$('ok').hidden=false;$('ok').innerHTML='<h2>La convocatoria no está abierta</h2><p>Vuelve a revisar cuando se publique la siguiente.</p>';return}
+ $('maestria').innerHTML='<option value="">Elige una</option>'+c.maestrias.map(m=>'<option>'+m+'</option>').join('');
+ $('regimen').innerHTML='<option value="">Elige uno</option>'+c.regimenes.map(m=>'<option>'+m+'</option>').join('')+'<option>Otro</option>'});
+$('go').onclick=async e=>{e.preventDefault();$('msg').textContent='';$('go').disabled=true;
+ const b={};['nombre','correo','telefono','maestria','regimen'].forEach(k=>b[k]=$(k).value);
+ ['titulo','exp_virtual','reside_cdmx','doctorado','privacidad'].forEach(k=>b[k]=$(k).checked);
+ const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const d=await r.json();$('go').disabled=false;
+ if(!r.ok){$('msg').textContent=d.error;return}
+ $('f').hidden=true;$('ok').hidden=false;
+ if(d.cumple)location.href='/candidato.html?t='+d.token;
+ else $('ok').innerHTML='<h2>Gracias por tu interés</h2><p>Por el momento no cumples el perfil solicitado. Conservaremos tus datos para futuras convocatorias.</p>'};
+</script></body></html>
